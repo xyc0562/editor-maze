@@ -78,20 +78,20 @@ genMaze n =
     in
         aux (0,0) [] (initMaze n)
 
-printMaze : Maze -> Array ()
-printMaze {cells,walls} =
+asciiMaze : Maze -> List String
+asciiMaze {cells,walls} =
     let
         (xWalls, yWalls) = walls
         dim = Array.length cells
-        base = Array.repeat (dim*2+1) (Array.repeat (dim*2+1) '#')
+        base = Array.repeat (dim*2+1) (Array.repeat (dim*2+1) '█')
         goe x y ll =
             case get2 x y ll of
-                Nothing -> '#'
-                Just IntactWall -> '#'
-                Just BreachedWall -> ' '
+                Nothing -> '█'
+                Just IntactWall -> '█'
+                Just BreachedWall -> '░'
         carve b x y =
             if x < dim*2+1 then
-                if y < dim*2+1 then carve (set2 x y ' ' b) x (y+2)
+                if y < dim*2+1 then carve (set2 x y '░' b) x (y+2)
                 else carve b (x+2) 1
             else b
         carveX b x y =
@@ -104,6 +104,10 @@ printMaze {cells,walls} =
                 if y < dim+1 then carveY (set2 (2*x) (2*y+1) (goe x y yWalls) b) x (y+1)
                 else carveY b (x+1) 0
             else b
-        model = carveX (carveY (carve base 1 1) 0 0) 0 0
+        model = let b = carveX (carveY (carve base 1 1) 0 0) 0 0
+                in (set2 0 1 '░' b) |> (set2 (2*dim) (2*dim-1) '░')
     in
-        Array.map (flip Debug.log ()) (Array.map (\arr -> String.fromList (Array.toList arr)) model)
+        Array.map (\arr -> String.fromList (Array.toList arr)) model |> Array.toList
+
+printMaze : Maze -> ()
+printMaze = (flip Debug.log ()) << String.join "\n" << asciiMaze
