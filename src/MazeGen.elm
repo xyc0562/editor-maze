@@ -3,6 +3,7 @@ import Native.Random
 import Array exposing (Array, get, set, fromList)
 import String
 import Debug
+import Char
 
 -- Utils
 get2 : Int -> Int -> Array (Array a) -> Maybe a
@@ -25,9 +26,22 @@ randFirst fn l =
     in
         get idx arr
 
-type Wall = IntactWall | BreachedWall
+-- Types
 
-type Cell = CleanCell | DirtyCell
+type alias Pos = 
+    { id: Int
+    , x: Int
+    , y: Int
+    }
+
+type Wall
+    = IntactWall
+    | BreachedWall
+
+type Cell
+    = CleanCell
+    | DirtyCell
+    | OccupiedCell Int
 
 type alias Maze =
     { cells: Array (Array Cell)
@@ -46,38 +60,57 @@ initMaze n =
 genMaze : Int -> Maze
 genMaze n =
     let
-        goe df x y ll fn =
-            case get2 x y ll of
-                Nothing -> df
-                Just a -> fn a
-
         aux (x, y) s {cells,walls} =
-            goe (Maze cells walls) x y cells (\c ->
-                let
-                    newCells = set2 x y DirtyCell cells
-                    nbs = [(x-1,y), (x+1,y), (x,y-1), (x,y+1)]
-                    fn (i,j) =
-                        case get2 i j newCells of
-                            Nothing -> False
-                            Just DirtyCell -> False
-                            Just CleanCell -> True
-                in
-                    case randFirst fn nbs of
-                        Just (i,j) ->
-                            let
-                                (xWalls,yWalls) = walls
-                                newWalls =
-                                    if x == i
-                                    then (set2 i (max y j) BreachedWall xWalls, yWalls)
-                                    else (xWalls, set2 (max x i) j BreachedWall yWalls)
-                            in
-                                aux (i,j) ((x,y)::s) (Maze newCells newWalls)
-                        Nothing -> case s of
-                            idx::s -> aux idx s (Maze newCells walls)
-                            [] -> Maze newCells walls)
+            case get2 x y cells of
+                Nothing -> Maze cells walls
+                Just c ->
+                    let
+                        newCells = set2 x y DirtyCell cells
+                        nbs = [(x-1,y), (x+1,y), (x,y-1), (x,y+1)]
+                        fn (i,j) =
+                            case get2 i j newCells of
+                                Just CleanCell -> True
+                                _ -> False
+                    in
+                        case randFirst fn nbs of
+                            Just (i,j) ->
+                                let
+                                    (xWalls,yWalls) = walls
+                                    newWalls =
+                                        if x == i
+                                        then (set2 i (max y j) BreachedWall xWalls, yWalls)
+                                        else (xWalls, set2 (max x i) j BreachedWall yWalls)
+                                in
+                                    aux (i,j) ((x,y)::s) (Maze newCells newWalls)
+                            Nothing -> case s of
+                                idx::s -> aux idx s (Maze newCells walls)
+                                [] -> Maze newCells walls
     in
         aux (0,0) [] (initMaze n)
+        
+size : Maze -> Int
+size {cells} = Array.length cells
 
+updatePos : Maze -> Pos -> Maze
+updatePos {cells,walls} {id,x,y} =
+    let 
+        newCells = set2 x y (OccupiedCell id) cells
+    in
+        Maze newCells walls
+
+hasWall : (Int, Int) -> (Int, Int) -> Maze -> Bool
+hasWall (x1, y1) (x2, y2) {cells, walls} =
+    let
+        (xWalls, yWalls) = walls
+        wall =
+            if x1 == x2 then get2 x1 (max y1 y2) xWalls
+            else get2 (max x1 x2) y1 yWalls
+    in
+        case wall of
+            Just BreachedWall -> False
+            _ -> True
+
+-- Generate an ASCII representation of the maze
 asciiMaze : Maze -> List String
 asciiMaze {cells,walls} =
     let
@@ -91,7 +124,13 @@ asciiMaze {cells,walls} =
                 Just BreachedWall -> '░'
         carve b x y =
             if x < dim*2+1 then
-                if y < dim*2+1 then carve (set2 x y '░' b) x (y+2)
+                if y < dim*2+1 then
+                    let
+                        char = case get2 (floor ((toFloat x)/2)) (floor ((toFloat y)/2)) cells of
+                            Just (OccupiedCell id) -> Char.fromCode (48 + id)
+                            _ -> '░'
+                    in 
+                        carve (set2 x y char b) x (y+2)
                 else carve b (x+2) 1
             else b
         carveX b x y =
@@ -109,5 +148,6 @@ asciiMaze {cells,walls} =
     in
         Array.map (\arr -> String.fromList (Array.toList arr)) model |> Array.toList
 
+-- Print ASCII representation of the maze to the console
 printMaze : Maze -> ()
 printMaze = (flip Debug.log ()) << String.join "\n" << asciiMaze
