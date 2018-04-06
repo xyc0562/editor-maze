@@ -74,7 +74,7 @@ renderMaze {cells,walls} =
                         renderConcreteVWall
                     else renderEmptyCell
                     )))
-        canvasDim = dim*2*(cellDim+wallDim)+wallDim
+        canvasDim = dim*(cellDim+wallDim)+wallDim
         halfOffset = ceiling ((toFloat (canvasDim - dim + wallDim))/(-2))
         goe x y ll r1 r2 =
             case get2 x y ll of
