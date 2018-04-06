@@ -28,9 +28,9 @@ renderCell c ( xOff, yOff ) ( x, y ) =
         ,-1*((toFloat y) + (getOffset yOff)*(cellDim+wallDim) + wallDim)
         )
 
-renderHWall : Float -> C.Color -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
-renderHWall l c ( xOff, yOff ) ( x, y ) =
-    Collage.rect l wallDim
+renderHWall : Float -> Float -> C.Color -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
+renderHWall w l c ( xOff, yOff ) ( x, y ) =
+    Collage.rect l w
     |> Collage.filled c
     |> Collage.move (
         (toFloat x) + (getOffset xOff)*(cellDim+wallDim)+wallDim
@@ -46,17 +46,21 @@ renderVWall l c ( xOff, yOff ) ( x, y ) =
         , -1*((toFloat y) + (getOffset yOff)*(cellDim+wallDim) + wallDim)
         )
 
+cGray = C.rgba 236 240 241 0.85
 
 renderNth _ _ = Collage.rect 0 0 |> Collage.filled (C.rgb 0 0 0) |> Collage.move (0, 0)
 renderConcreteCell = renderCell (C.rgb 0 0 0)
-renderEmptyCell = renderCell (C.rgb 182 182 182)
+renderEmptyCell = renderCell cGray
 renderPlayer = renderCell (C.rgb 255 0 0)
 
 renderConcreteVWall = renderVWall (cellDim+wallDim*2) (C.rgb 0 0 0)
-renderBreachedVWall = renderVWall cellDim (C.rgb 182 182 182)
+renderBreachedVWall = renderVWall cellDim cGray
 
-renderConcreteHWall = renderHWall (cellDim+wallDim*2) (C.rgb 0 0 0)
-renderBreachedHWall = renderHWall cellDim (C.rgb 182 182 182)
+renderConcreteHWall = renderHWall wallDim (cellDim+wallDim*2) (C.rgb 0 0 0)
+renderBreachedHWall = renderHWall wallDim cellDim cGray
+
+renderStartHWall = renderHWall (wallDim*2) cellDim (C.rgb 232 64 56)
+renderEndHWall = renderHWall (wallDim*2) cellDim (C.rgb 56 147 208)
 
 renderMaze : Maze -> Html Msg
 renderMaze {cells,walls} =
@@ -74,8 +78,8 @@ renderMaze {cells,walls} =
                         renderConcreteVWall
                     else renderEmptyCell
                     )))
-        canvasDim = dim*(cellDim+wallDim)+wallDim
-        halfOffset = ceiling ((toFloat (canvasDim - dim + wallDim))/(-2))
+        canvasDim = dim*(cellDim+wallDim)+2*wallDim
+        halfOffset = ceiling ((toFloat (canvasDim - dim))/(-2))
         goe x y ll r1 r2 =
             case get2 x y ll of
                 Nothing -> r1
@@ -103,7 +107,7 @@ renderMaze {cells,walls} =
                 else carveY b (x+1) 0
             else b
         model = let b = carveX (carveY (carve base 1 1) 0 0) 0 0
-                in (set2 0 1 renderBreachedHWall b) |> (set2 (2*dim) (2*dim-1) renderBreachedHWall)
+                in (set2 0 1 renderStartHWall b) |> (set2 (2*dim) (2*dim-1) renderEndHWall)
 
     in
         List.indexedMap (\y row ->
@@ -115,23 +119,14 @@ renderMaze {cells,walls} =
         |> Collage.collage canvasDim canvasDim 
         |> Element.toHtml
 
-renderGameButton : Player -> Html Msg
-renderGameButton player =
-    let
-        ( txt, msg ) =
-            case player.mode of
-                ModeEmacs ->
-                    ( "Vim Mode", UseMode ModeVim )
-
-                ModeVim ->
-                    ( "Emacs Mode", UseMode ModeEmacs )
-    in
+renderMainButton : String -> String -> String -> Msg -> Html Msg
+renderMainButton bg color txt msg =
         button
             [ style
-                [ ( "background", "#34495f" )
+                [ ( "background", bg )
+                , ( "color", color)
                 , ( "border", "0" )
                 , ( "bottom", "30px" )
-                , ( "color", "#fff" )
                 , ( "cursor", "pointer" )
                 , ( "display", "block" )
                 , ( "font-size", "18px" )
@@ -143,18 +138,57 @@ renderGameButton player =
                 , ( "padding", "0" )
                 , ( "margin-left", "20px" )
                 , ( "width", "160px" )
+                , ( "margin-top", "10px" )
                 ]
             , onClick msg
             ]
             [ text txt ]
 
+renderModeButton : Player -> Html Msg
+renderModeButton player =
+    let
+        ( txt, msg ) =
+            case player.mode of
+                ModeEmacs ->
+                    ( "Use Vim Mode", UseMode ModeVim )
+
+                ModeVim ->
+                    ( "Use Emacs Mode", UseMode ModeEmacs )
+    in
+        renderMainButton "#95c43d" "#ffffff" txt msg
+
+renderResetButton : Html Msg
+renderResetButton =
+    renderMainButton "#34495f" "#ffffff" "New Game" Reset
+
 renderPanel : Model -> Html Msg
-renderPanel ({me} as model) =
+renderPanel ({me,time} as model) =
     let
         {mode} = me
 
         renderModeDesc =
-            span [] [text (if mode == ModeEmacs then "Current Mode: Emacs" else "Current Mode: Vim")]
+            span
+                [ style
+                    [ ( "margin-top", "20px" )
+                    , ( "font-size", "20px" )
+                    ]
+                ]
+                [text (if mode == ModeEmacs then "Current Mode: Emacs" else "Current Mode: Vim")]
+
+        renderControlDoc =
+            let keys =
+                    case mode of
+                        ModeEmacs -> ["Ctrl-p", "Ctrl-n", "Ctrl-b", "Ctrl-f"]
+                        ModeVim -> ["k", "j", "h", "l"]
+                rows = List.map2 (++) ["Up: ", "Down: ", "Left: ", "Right: "] keys
+            in
+                div
+                    [ style
+                        [ ( "margin-top", "10px" )
+                        , ( "margin-bottom", "10px" )
+                        ]
+                    ]
+                    (List.map (\s -> span [ style [ ( "display", "block" ) ] ] [text s]) rows)
 
         renderTitle =
             span
@@ -165,19 +199,46 @@ renderPanel ({me} as model) =
                     ]
                 ]
                 [text "Editor Maze"]
+        renderTime =
+            let
+                pad = U.pad 2 "0"
+                seconds = time%60 |> toString |> pad
+                minutes = floor ((toFloat time)/60) |> toString |> pad
+                hours = floor ((toFloat time)/3600) |> toString |> pad
+            in
+                span
+                    [ style
+                        [ ( "font-size", "35px" )
+                        , ( "background", "rgb(57, 147, 208)"  )
+                        , ( "color", "#ffffff" )
+                        , ( "line-height", "60px" )
+                        , ( "margin-top", "20px" )
+                        ]
+                    ]
+                    [(text (hours ++ ":" ++ minutes ++ ":" ++ seconds))]
     in
         div
         [ style
             [ ( "display", "inline-block" )
+            , ( "flex", "1" )
             , ( "width", "200px" )
             , ( "text-align", "center" ) 
             , ( "padding-left", "25px" ) 
-            , ( "vertical-align", "top" ) ]
+            , ( "vertical-align", "top" )
+            , ( "position", "relative" )
+            ]
         , class "panel"
             ]
         [ renderTitle
+        , renderTime
         , renderModeDesc
-        , renderGameButton me
+        , renderControlDoc
+        , renderModeButton me
+        , div
+            [ style
+                [ ( "position", "absolute" ), ( "bottom", "0" ) ]
+            ]
+            [ renderResetButton ]
         ]
 
 view : Model -> Html Msg
@@ -191,9 +252,12 @@ view ({maze,me} as model) =
             ]
     in 
 
-        div []
-        [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze ] -- Main game
-        , renderPanel model -- Panel
-        ]
+        div
+            [ style
+                [ ( "display", "flex" ) ]
+            ]
+            [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze ] -- Main game
+            , renderPanel model -- Panel
+            ]
 
 

@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Time exposing (Time, second)
 import Html exposing (program)
 import Char exposing (fromCode, toCode)
 import Mouse
@@ -11,22 +12,32 @@ import Debug
 import View exposing (..)
 import Model exposing (..)
 
-init : () -> ( Model, Cmd Msg )
-init () =
-    (
-        { maze = MG.genMaze 25
-        , me = Player (Pos 1 0 0) ModeVim
-        , players = []
-        , combos = Keyboard.Combo.init keyboardCombos ComboMsg
-        },
-        Cmd.none
-    )
+resetPos : Player -> Player
+resetPos p = { p | pos = Pos 1 0 0 }
+
+init : Maybe Model -> ( Model, Cmd Msg )
+init mModel =
+    let
+        freshModel =
+            { maze = MG.genMaze 28
+            , me = Player (Pos 1 0 0) ModeVim
+            , players = []
+            , combos = Keyboard.Combo.init keyboardCombos ComboMsg
+            , time = 0
+            }
+        newModel =
+            case mModel of
+                Nothing -> freshModel
+                Just m -> { freshModel | me = resetPos m.me, players = List.map resetPos m.players }
+    in
+        newModel ! []
+    
 
 -- UPDATE
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({maze,me} as model) =
+update msg ({maze,me,time} as model) =
     case msg of
         ComboMsg msg ->
             let
@@ -38,6 +49,11 @@ update msg ({maze,me} as model) =
         UseMode m ->
             {model | me = { me | mode = m } }  ! []
 
+        Tick ->
+            {model | time = time + 1} ! []
+
+        Reset ->
+            init (Just model)
         _ ->
             let 
                 {pos,mode} = me
@@ -69,8 +85,8 @@ update msg ({maze,me} as model) =
                 hasWall = MG.hasWall (x,y) (x1,y1) maze
                 newPos = if hasWall then pos else Pos id x1 y1
             in
-                if newPos == Pos id (dim-1) (dim-1)
-                then init ()
+                if newPos == Pos id (dim-1) (dim-1) then
+                    init (Just model)
                 else { model | me = (Player newPos mode) } ! []
 
 
@@ -81,7 +97,9 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Keyboard.downs KeyMsg
-        , Keyboard.Combo.subscriptions model.combos]
+        , Keyboard.Combo.subscriptions model.combos
+        , Time.every second (always Tick)
+        ]
 
 
 
@@ -91,7 +109,7 @@ subscriptions model =
 main : Program Never Model Msg
 main =
     program
-        { init = init ()
+        { init = init Nothing
         , view = view
         , update = update
         , subscriptions = subscriptions

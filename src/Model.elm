@@ -27,6 +27,7 @@ type alias Model =
     , me: Player
     , players: List Player
     , combos: Keyboard.Combo.Model Msg
+    , time: Int
     } 
 
 
@@ -43,5 +44,7 @@ type Msg
     | ComboMsg Keyboard.Combo.Msg
     | RealComboMsg ComboDir
     | UseMode Mode
+    | Tick
+    | Reset
 
 
