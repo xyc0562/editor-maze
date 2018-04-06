@@ -10,7 +10,6 @@ import Utils as U
 import Debug
 import View exposing (..)
 import Model exposing (..)
-import Messages exposing (..)
 
 init : () -> ( Model, Cmd Msg )
 init () =
@@ -35,6 +34,9 @@ update msg ({maze,me} as model) =
                     Keyboard.Combo.update msg model.combos
             in
                 {model | combos = updatedKeys} ! [cmd]
+
+        UseMode m ->
+            {model | me = { me | mode = m } }  ! []
 
         _ ->
             let 

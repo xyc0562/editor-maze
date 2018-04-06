@@ -1,7 +1,9 @@
 module Model exposing (..)
 import MazeGen exposing (Pos, Maze)
-import Messages exposing (Msg(..), ComboDir(..))
 import Keyboard.Combo
+import Keyboard
+
+--Model
 
 keyboardCombos : List (Keyboard.Combo.KeyCombo Msg)
 keyboardCombos =
@@ -26,5 +28,20 @@ type alias Model =
     , players: List Player
     , combos: Keyboard.Combo.Model Msg
     } 
+
+
+
+-- Messages
+type ComboDir
+    = Right
+    | Left
+    | Up
+    | Down
+
+type Msg
+    = KeyMsg Keyboard.KeyCode
+    | ComboMsg Keyboard.Combo.Msg
+    | RealComboMsg ComboDir
+    | UseMode Mode
 
 

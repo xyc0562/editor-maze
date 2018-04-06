@@ -1,11 +1,11 @@
 module View exposing (view)
 
 import Html exposing (div, span, br, Html, text, button)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (style, class)
+import Html.Events exposing (onClick)
 import Collage
 import Color as C
-import Messages exposing (Msg)
-import Model exposing (Model)
+import Model exposing (Model, Player, Mode(..), Msg(..))
 import MazeGen as MG exposing (Maze, Pos, Wall(..), Cell(..), set2, get2)
 import Element
 import Char
@@ -115,8 +115,73 @@ renderMaze {cells,walls} =
         |> Collage.collage canvasDim canvasDim 
         |> Element.toHtml
 
+renderGameButton : Player -> Html Msg
+renderGameButton player =
+    let
+        ( txt, msg ) =
+            case player.mode of
+                ModeEmacs ->
+                    ( "Vim Mode", UseMode ModeVim )
+
+                ModeVim ->
+                    ( "Emacs Mode", UseMode ModeEmacs )
+    in
+        button
+            [ style
+                [ ( "background", "#34495f" )
+                , ( "border", "0" )
+                , ( "bottom", "30px" )
+                , ( "color", "#fff" )
+                , ( "cursor", "pointer" )
+                , ( "display", "block" )
+                , ( "font-size", "18px" )
+                , ( "font-weight", "300" )
+                , ( "height", "60px" )
+                , ( "left", "30px" )
+                , ( "line-height", "60px" )
+                , ( "outline", "none" )
+                , ( "padding", "0" )
+                , ( "margin-left", "20px" )
+                , ( "width", "160px" )
+                ]
+            , onClick msg
+            ]
+            [ text txt ]
+
+renderPanel : Model -> Html Msg
+renderPanel ({me} as model) =
+    let
+        {mode} = me
+
+        renderModeDesc =
+            span [] [text (if mode == ModeEmacs then "Current Mode: Emacs" else "Current Mode: Vim")]
+
+        renderTitle =
+            span
+                [ style
+                    [ ( "font-size", "35px" )
+                    , ( "color", "rgb(52, 73, 95)" )
+                    , ( "line-height", "60px" )
+                    ]
+                ]
+                [text "Editor Maze"]
+    in
+        div
+        [ style
+            [ ( "display", "inline-block" )
+            , ( "width", "200px" )
+            , ( "text-align", "center" ) 
+            , ( "padding-left", "25px" ) 
+            , ( "vertical-align", "top" ) ]
+        , class "panel"
+            ]
+        [ renderTitle
+        , renderModeDesc
+        , renderGameButton me
+        ]
+
 view : Model -> Html Msg
-view {maze,me} =
+view ({maze,me} as model) =
     let
         {pos} = me
         newMaze = MG.updatePos maze pos
@@ -125,12 +190,10 @@ view {maze,me} =
             , br [] []
             ]
     in 
-        div [ style
-                [ ("font-family", "monospace")
-                , ("line-height", "0.8em")
-                , ("font-size", "2em")
-                ]
-            ]
-            [(renderMaze newMaze)]
+
+        div []
+        [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze ] -- Main game
+        , renderPanel model -- Panel
+        ]
 
 

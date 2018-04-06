@@ -1,0 +1,22 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: rgba(236, 240, 241, 1);
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+#wrapper {
+    text-align: center;
+}
+
+#inner-wrapper {
+    display: inline-block;
+    margin-top: 50px;
+    background-color: #FFFFFF;
+    padding: 25px;
+}
+
+.panel > span {
+    display: block;
+}
