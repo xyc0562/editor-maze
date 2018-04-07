@@ -28,6 +28,7 @@ type alias Model =
     , players: List Player
     , combos: Keyboard.Combo.Model Msg
     , time: Int
+    , size: Int
     } 
 
 
@@ -46,5 +47,6 @@ type Msg
     | UseMode Mode
     | Tick
     | Reset
+    | UpdateSize String
 
 

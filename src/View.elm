@@ -1,8 +1,8 @@
 module View exposing (view)
 
-import Html exposing (div, span, br, Html, text, button)
-import Html.Attributes exposing (style, class)
-import Html.Events exposing (onClick)
+import Html exposing (div, span, br, Html, text, button, input)
+import Html.Attributes exposing (style, class, type_, step, value)
+import Html.Events exposing (onClick, onInput)
 import Collage
 import Color as C
 import Model exposing (Model, Player, Mode(..), Msg(..))
@@ -12,7 +12,7 @@ import Char
 import Array
 import Utils as U
 
-cellDim = 24
+cellDim = 26
 wallDim = 2
 
 getOffset : Float -> Float
@@ -79,7 +79,7 @@ renderMaze {cells,walls} =
                     else renderEmptyCell
                     )))
         canvasDim = dim*(cellDim+wallDim)+2*wallDim
-        halfOffset = ceiling ((toFloat (canvasDim - dim))/(-2))
+        halfOffset = round (-1*((toFloat (canvasDim - cellDim - wallDim))/2))
         goe x y ll r1 r2 =
             case get2 x y ll of
                 Nothing -> r1
@@ -161,8 +161,29 @@ renderResetButton : Html Msg
 renderResetButton =
     renderMainButton "#34495f" "#ffffff" "New Game" Reset
 
+renderSizeInput : Int -> Html Msg
+renderSizeInput size =
+    div
+        [ style
+            [ ( "font-size", "18px" ) ]]
+        [ span
+            []
+            [ text "Maze Size: " ]
+        , input [ type_ "number"
+                , Html.Attributes.min "18"
+                , Html.Attributes.max "40"
+                , onInput UpdateSize
+                , value (toString size)
+                , style
+                    [ ( "font-size", "18px" )
+                    , ( "margin-right", "20px" )
+                    ]
+                ]
+                []
+        ]
+
 renderPanel : Model -> Html Msg
-renderPanel ({me,time} as model) =
+renderPanel ({me,time,size} as model) =
     let
         {mode} = me
 
@@ -236,9 +257,14 @@ renderPanel ({me,time} as model) =
         , renderModeButton me
         , div
             [ style
-                [ ( "position", "absolute" ), ( "bottom", "0" ) ]
+                [ ( "position", "absolute" )
+                , ( "bottom", "0" )
+                , ( "width", "100%" )
+                ]
             ]
-            [ renderResetButton ]
+            [ renderSizeInput size
+            , renderResetButton
+            ]
         ]
 
 view : Model -> Html Msg

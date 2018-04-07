@@ -17,13 +17,17 @@ resetPos p = { p | pos = Pos 1 0 0 }
 
 init : Maybe Model -> ( Model, Cmd Msg )
 init mModel =
-    let
+    let size =
+            case mModel of
+                Nothing -> 32
+                Just m -> if m.size < 18 then 18 else if m.size > 50 then 50 else m.size
         freshModel =
-            { maze = MG.genMaze 28
+            { maze = MG.genMaze size
             , me = Player (Pos 1 0 0) ModeVim
             , players = []
             , combos = Keyboard.Combo.init keyboardCombos ComboMsg
             , time = 0
+            , size = size
             }
         newModel =
             case mModel of
@@ -39,6 +43,7 @@ init mModel =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({maze,me,time} as model) =
     case msg of
+
         ComboMsg msg ->
             let
                 (updatedKeys,cmd) =
@@ -54,6 +59,15 @@ update msg ({maze,me,time} as model) =
 
         Reset ->
             init (Just model)
+
+        UpdateSize str ->
+            let
+                newSize = case String.toInt str of
+                    Ok s -> s
+                    Err _ -> model.size
+            in
+                {model | size = newSize } ! []
+
         _ ->
             let 
                 {pos,mode} = me
