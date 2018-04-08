@@ -335,7 +335,7 @@ view : Model -> Html Msg
 view ({canvas,maze,me,players} as model) =
     let
         {pos} = me
-        newMaze = MG.updatePos maze pos
+        newMaze = List.foldl (\player mz -> MG.updatePos mz player.pos) maze players
         genRow s =
             [ span [ style [ ("margin", "-2px") ] ] [text s]
             , br [] []

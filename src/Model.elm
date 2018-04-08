@@ -33,8 +33,6 @@ type alias Model =
     , size: Int
     } 
 
-
-
 -- Messages
 type ComboDir
     = Right
@@ -50,5 +48,7 @@ type Msg
     | Tick
     | Reset
     | UpdateSize String
+    | SockMsg String
+    | SendSockMsg
 
 

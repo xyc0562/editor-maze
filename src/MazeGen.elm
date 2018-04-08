@@ -57,6 +57,9 @@ initMaze n =
     in
         Maze cells walls
 
+getDimension : Maze -> Int
+getDimension {cells} = Array.length cells
+
 genMaze : Int -> Maze
 genMaze n =
     let
@@ -111,6 +114,7 @@ hasWall (x1, y1) (x2, y2) {cells, walls} =
             _ -> True
 
 -- Generate an ASCII representation of the maze
+-- Used for debugging purpose
 asciiMaze : Maze -> List String
 asciiMaze {cells,walls} =
     let

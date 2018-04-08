@@ -1,0 +1,23 @@
+{
+  "name": "editor_maze_server",
+  "version": "0.0.1",
+  "description": "Editor Maze Node Server",
+  "main": "index.js",
+  "repository": "",
+  "author": "Xu Yecheng",
+  "license": "MIT",
+  "scripts": {
+    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
+    "start": "yarn run build && node dist/index.js"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-runtime": "^6.26.0",
+    "lodash": "^4.17.5",
+    "ws": "^5.1.1"
+  }
+}
