@@ -224,8 +224,8 @@ renderPanel ({me,time,size} as model) =
             let
                 pad = U.pad 2 "0"
                 seconds = time%60 |> toString |> pad
-                minutes = floor ((toFloat time)/60) |> toString |> pad
-                hours = floor ((toFloat time)/3600) |> toString |> pad
+                minutes = floor ((toFloat time)/60) |> flip (%) 60 |> toString |> pad
+                hours = floor ((toFloat time)/3600) |> flip (%) 60 |> toString |> pad
             in
                 span
                     [ style
