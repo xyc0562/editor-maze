@@ -21,14 +21,20 @@ init mModel =
             case mModel of
                 Nothing -> 25
                 Just m -> if m.size < 18 then 18 else if m.size > 50 then 50 else m.size
+
+        maze =
+            MG.genMaze size
+
         freshModel =
-            { maze = MG.genMaze size
+            { maze = maze
+            , canvas = renderEmptyMaze maze
             , me = Player (Pos 1 0 0) ModeVim
             , players = []
             , combos = Keyboard.Combo.init keyboardCombos ComboMsg
             , time = 0
             , size = size
             }
+
         newModel =
             case mModel of
                 Nothing -> freshModel

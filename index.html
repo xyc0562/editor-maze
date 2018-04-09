@@ -30,6 +30,23 @@
         </div>
         <script src="gen/App.js"></script>
         <script>
+            // Disable control keys
+            document.onkeydown = function (e) {
+                e = e || window.event;//Get event
+                if (e.ctrlKey) {
+                    var c = e.which || e.keyCode;//Get key code
+                    switch (c) {
+                        case 80: // C-P
+                        case 78: // C-N
+                        case 66: // C-B
+                        case 70: // C-F
+                            e.preventDefault();     
+                            e.stopPropagation();
+                            break;
+                    }
+                }
+            };
+            // Mount Elm
             var node = document.getElementById('main');
             var app = Elm.Main.embed(node);
         </script>

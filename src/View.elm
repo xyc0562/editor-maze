@@ -1,4 +1,4 @@
-module View exposing (view)
+module View exposing (view, renderEmptyMaze)
 
 import Html exposing (div, span, br, Html, text, button, input)
 import Html.Attributes exposing (style, class, type_, step, value)
@@ -80,8 +80,8 @@ renderBreachedHWall = renderHWall wallDim cellDim cGray
 renderStartHWall = renderHWall (wallDim*2) cellDim (C.rgb 232 64 56)
 renderEndHWall = renderHWall (wallDim*2) cellDim (C.rgb 56 147 208)
 
-renderMaze : Maze -> List Player -> Html Msg
-renderMaze {cells,walls} players =
+renderEmptyMaze : Maze -> Element.Element
+renderEmptyMaze {cells,walls} =
     let
         (xWalls, yWalls) = walls
         dim = Array.length cells
@@ -106,12 +106,7 @@ renderMaze {cells,walls} players =
         carve b x y =
             if x < dim*2+1 then
                 if y < dim*2+1 then
-                    let
-                        char = case get2 (floor ((toFloat x)/2)) (floor ((toFloat y)/2)) cells of
-                            Just (OccupiedCell id) -> renderPlayer id players
-                            _ -> renderEmptyCell
-                    in 
-                        carve (set2 x y char b) x (y+2)
+                    carve (set2 x y renderEmptyCell b) x (y+2)
                 else carve b (x+2) 1
             else b
         carveX b x y =
@@ -135,7 +130,35 @@ renderMaze {cells,walls} players =
         ) (Array.toList model)
         |> U.flatten2D
         |> Collage.collage canvasDim canvasDim 
-        |> Element.toHtml
+
+
+updateMaze : Maze -> Element.Element -> List Player -> Html Msg
+updateMaze {cells} canvas players =
+    let
+        dim =
+            Array.length cells
+
+        canvasDim =
+            dim*(cellDim+wallDim)+2*wallDim
+
+        halfOffset =
+            round (-1*((toFloat (canvasDim - cellDim - wallDim))/2))
+
+        renderPlayerOnCanvas {pos,mode} =
+            let
+                {x,y,id} = pos
+            in
+                renderPlayer id players (toFloat (2*y+1), toFloat (2*x+1)) (halfOffset, halfOffset)
+
+        playerForms =
+            List.map renderPlayerOnCanvas players
+
+        forms =
+            [Collage.toForm canvas] ++ playerForms
+    in
+        forms
+            |> Collage.collage canvasDim canvasDim 
+            |> Element.toHtml
 
 renderMainButton : String -> String -> String -> Msg -> Html Msg
 renderMainButton bg color txt msg =
@@ -219,7 +242,30 @@ renderPanel ({me,time,size} as model) =
                     case mode of
                         ModeEmacs -> ["Ctrl-p", "Ctrl-n", "Ctrl-b", "Ctrl-f"]
                         ModeVim -> ["k", "j", "h", "l"]
-                rows = List.map2 (++) ["Up: ", "Down: ", "Left: ", "Right: "] keys
+
+                rows =
+                    List.map2 (++) ["Up: ", "Down: ", "Left: ", "Right: "] keys
+                
+                ctrlSpans =
+                    (List.map (\s -> span [ style [ ( "display", "block" ) ] ] [text s]) rows)
+
+                allSpans =
+                    case mode of
+                        ModeVim -> ctrlSpans
+                        ModeEmacs ->
+                            let s =
+                                span
+                                    [ style
+                                        [ ( "font-size", "18px" )
+                                        , ("font-weight", "bold" )
+                                        , ("color", "#e84038" )
+                                        , ("display", "block" )
+                                        , ("margin-bottom", "15px" )
+                                        ]
+                                    ]
+                                    [ text "Use Full Screen Mode!" ]
+                            in
+                                s::ctrlSpans
             in
                 div
                     [ style
@@ -227,7 +273,7 @@ renderPanel ({me,time,size} as model) =
                         , ( "margin-bottom", "10px" )
                         ]
                     ]
-                    (List.map (\s -> span [ style [ ( "display", "block" ) ] ] [text s]) rows)
+                    allSpans    
 
         renderTitle =
             span
@@ -286,7 +332,7 @@ renderPanel ({me,time,size} as model) =
         ]
 
 view : Model -> Html Msg
-view ({maze,me,players} as model) =
+view ({canvas,maze,me,players} as model) =
     let
         {pos} = me
         newMaze = MG.updatePos maze pos
@@ -300,7 +346,7 @@ view ({maze,me,players} as model) =
             [ style
                 [ ( "display", "flex" ) ]
             ]
-            [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze (me::players) ] -- Main game
+            [ div [ style [ ( "display", "inline-block" ) ] ] [ updateMaze newMaze canvas (me::players) ] -- Main game
             , renderPanel model -- Panel
             ]
 

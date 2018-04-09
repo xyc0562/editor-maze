@@ -2,6 +2,7 @@ module Model exposing (..)
 import MazeGen exposing (Pos, Maze)
 import Keyboard.Combo
 import Keyboard
+import Element exposing (Element)
 
 --Model
 
@@ -24,6 +25,7 @@ type alias Player =
 
 type alias Model =
     { maze: Maze
+    , canvas: Element
     , me: Player
     , players: List Player
     , combos: Keyboard.Combo.Model Msg
