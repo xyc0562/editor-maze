@@ -138,8 +138,8 @@ renderEmptyMaze {cells,walls} =
         |> U.flatten2D
         |> Collage.collage canvasDim canvasDim 
 
-updateMaze : Maze -> Element.Element -> List Player -> Html Msg
-updateMaze {cells} canvas players =
+updateMaze : Maze -> Element.Element -> Player -> List Player -> Html Msg
+updateMaze {cells} canvas me players =
     let
         dim =
             Array.length cells
@@ -154,7 +154,7 @@ updateMaze {cells} canvas players =
             let
                 {x,y,id} = pos
             in
-                renderPlayer id players (toFloat (2*y+1), toFloat (2*x+1)) (halfOffset, halfOffset)
+                renderPlayer id me players (toFloat (2*y+1), toFloat (2*x+1)) (halfOffset, halfOffset)
 
         playerForms =
             List.map renderPlayerOnCanvas players
@@ -419,7 +419,7 @@ view ({canvas,maze,me,players,result} as model) =
                     [ ( "display", "inline-block" )
                     , ( "position", "relative" ) ]
                 ]
-                [ updateMaze newMaze canvas (me::players) -- Main game
+                [ updateMaze newMaze canvas me players -- Main game
                 , renderResult result
                 ] 
             , renderPanel model -- Panel

@@ -95,7 +95,8 @@ init mModel newGame =
             MG.genMaze size
 
         freshModel =
-            { maze = renderEmptyMaze maze
+            { maze = maze
+            , canvas = renderEmptyMaze maze
             , me = Player (Pos id 0 0) ModeVim
             , players = []
             , combos = Keyboard.Combo.init keyboardCombos ComboMsg
