@@ -12,21 +12,24 @@ import Char
 import Array
 import Utils as U
 
-cellDim = 26
+cellDim = 24
 wallDim = 2
 
 getOffset : Float -> Float
 getOffset raw =
     toFloat (floor (raw/2))
 
-renderCell : C.Color -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
-renderCell c ( xOff, yOff ) ( x, y ) =
-    Collage.rect cellDim cellDim 
-    |> Collage.filled c
-    |> Collage.move (
+moveCell (xOff, yOff) (x, y) =
+    Collage.move (
         (toFloat x) + (getOffset xOff)*(cellDim+wallDim) + wallDim
         ,-1*((toFloat y) + (getOffset yOff)*(cellDim+wallDim) + wallDim)
         )
+
+renderCell : C.Color -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
+renderCell c offsets coords =
+    Collage.rect cellDim cellDim 
+    |> Collage.filled c
+    |> moveCell offsets coords
 
 renderHWall : Float -> Float -> C.Color -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
 renderHWall w l c ( xOff, yOff ) ( x, y ) =
@@ -51,7 +54,22 @@ cGray = C.rgba 236 240 241 0.85
 renderNth _ _ = Collage.rect 0 0 |> Collage.filled (C.rgb 0 0 0) |> Collage.move (0, 0)
 renderConcreteCell = renderCell (C.rgb 0 0 0)
 renderEmptyCell = renderCell cGray
-renderPlayer = renderCell (C.rgb 255 0 0)
+
+renderPlayer : Int -> List Player -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
+renderPlayer id players offsets coords =
+    let
+        vimSrc = "img/vim.png"
+        emacsSrc = "img/emacs.png"
+        player =
+            List.filter (\p -> p.pos.id == id) players |> List.head
+        src =
+            case player of
+                Just p -> if p.mode == ModeVim then vimSrc else emacsSrc
+                _ -> emacsSrc
+    in
+        Element.image cellDim cellDim src
+        |> Collage.toForm
+        |> moveCell offsets coords
 
 renderConcreteVWall = renderVWall (cellDim+wallDim*2) (C.rgb 0 0 0)
 renderBreachedVWall = renderVWall cellDim cGray
@@ -62,8 +80,8 @@ renderBreachedHWall = renderHWall wallDim cellDim cGray
 renderStartHWall = renderHWall (wallDim*2) cellDim (C.rgb 232 64 56)
 renderEndHWall = renderHWall (wallDim*2) cellDim (C.rgb 56 147 208)
 
-renderMaze : Maze -> Html Msg
-renderMaze {cells,walls} =
+renderMaze : Maze -> List Player -> Html Msg
+renderMaze {cells,walls} players =
     let
         (xWalls, yWalls) = walls
         dim = Array.length cells
@@ -90,7 +108,7 @@ renderMaze {cells,walls} =
                 if y < dim*2+1 then
                     let
                         char = case get2 (floor ((toFloat x)/2)) (floor ((toFloat y)/2)) cells of
-                            Just (OccupiedCell id) -> renderPlayer
+                            Just (OccupiedCell id) -> renderPlayer id players
                             _ -> renderEmptyCell
                     in 
                         carve (set2 x y char b) x (y+2)
@@ -268,7 +286,7 @@ renderPanel ({me,time,size} as model) =
         ]
 
 view : Model -> Html Msg
-view ({maze,me} as model) =
+view ({maze,me,players} as model) =
     let
         {pos} = me
         newMaze = MG.updatePos maze pos
@@ -282,7 +300,7 @@ view ({maze,me} as model) =
             [ style
                 [ ( "display", "flex" ) ]
             ]
-            [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze ] -- Main game
+            [ div [ style [ ( "display", "inline-block" ) ] ] [ renderMaze newMaze (me::players) ] -- Main game
             , renderPanel model -- Panel
             ]
 
