@@ -395,7 +395,7 @@ renderResult {mode,desc} =
                                 , ( "text-align", "center" )
                                 ]
                             ]
-                            [ text "Press Enter to continue." ]
+                            [ text "Press Esc to continue." ]
                         ]
                     ]
 

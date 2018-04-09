@@ -177,6 +177,7 @@ handleNewGameMsg str m =
             in
                 { m
                 | maze = newMaze
+                , canvas = renderEmptyMaze newMaze
                 , me = inflatePlayer me
                 , players = List.map inflatePlayer players
                 , time = 0
@@ -291,10 +292,10 @@ update msg ({maze,me,time,result} as model) =
 
         _ ->
             case result.mode of
-                -- This means we need to clear screen through Enter key
+                -- This means we need to clear screen through Esc key
                 Just _ ->
                     case msg of
-                        KeyMsg 13 ->
+                        KeyMsg 27 ->
                             { model | result = Result Nothing "" } ! []
                         _ -> model ! []
 
