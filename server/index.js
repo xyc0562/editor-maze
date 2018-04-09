@@ -96,6 +96,13 @@ const handlePlayerStateUpdate = ({ id, x, y, mode }) => {
     broadcastState()
 }
 
+const handleWinnerUpdate = ({ result }) => {
+    broadcast({
+        t: "winnerUpdate",
+        result
+    })        
+}
+
 const handleMsg = (msg) => {
     const t = msg.t
     switch (t) {
@@ -105,6 +112,8 @@ const handleMsg = (msg) => {
             return handleKeepAlive(msg.id)
         case "playerStateUpdate":
             return handlePlayerStateUpdate(msg)
+        case "winnerUpdate":
+            return handleWinnerUpdate(msg)
     }
 }
 

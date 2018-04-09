@@ -1,4 +1,6 @@
 module Utils exposing (..)
+import Native.Random
+import Array
 
 flatten2D : List (List a) -> List a
 flatten2D list =
@@ -13,3 +15,13 @@ pad i p s =
 
 zip : List a -> List b -> List (a, b)
 zip = List.map2 (,)
+
+randFirst : (a -> Bool) -> List a -> Maybe a
+randFirst fn l =
+    let
+        arr = Array.fromList (List.filter fn l)
+        idx = floor (Native.Random.rand()*(toFloat (Array.length(arr))))
+    in
+        Array.get idx arr
+
+

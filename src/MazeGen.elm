@@ -1,9 +1,9 @@
 module MazeGen exposing (..)
-import Native.Random
 import Array exposing (Array, get, set, fromList)
 import String
 import Debug
 import Char
+import Utils as U
 
 -- Utils
 get2 : Int -> Int -> Array (Array a) -> Maybe a
@@ -17,14 +17,6 @@ set2 x y v ll =
     case get x ll of
         Nothing -> ll
         Just l -> set y v l |> flip (set x) ll
-
-randFirst : (a -> Bool) -> List a -> Maybe a
-randFirst fn l =
-    let
-        arr = fromList (List.filter fn l)
-        idx = floor (Native.Random.rand()*(toFloat (Array.length(arr))))
-    in
-        get idx arr
 
 -- Types
 
@@ -75,7 +67,7 @@ genMaze n =
                                 Just CleanCell -> True
                                 _ -> False
                     in
-                        case randFirst fn nbs of
+                        case U.randFirst fn nbs of
                             Just (i,j) ->
                                 let
                                     (xWalls,yWalls) = walls

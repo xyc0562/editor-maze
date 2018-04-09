@@ -55,16 +55,23 @@ renderNth _ _ = Collage.rect 0 0 |> Collage.filled (C.rgb 0 0 0) |> Collage.move
 renderConcreteCell = renderCell (C.rgb 0 0 0)
 renderEmptyCell = renderCell cGray
 
-renderPlayer : Int -> List Player -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
-renderPlayer id players offsets coords =
+renderPlayer : Int -> Player -> List Player -> ( Float, Float ) -> ( Int, Int ) -> Collage.Form
+renderPlayer id me players offsets coords =
     let
         vimSrc = "img/vim.png"
         emacsSrc = "img/emacs.png"
+        vimMeSrc = "img/vim.png"
+        emacsMeSrc = "img/emacs.png"
+        allPlayers = me::players
         player =
-            List.filter (\p -> p.pos.id == id) players |> List.head
+            List.filter (\p -> p.pos.id == id) allPlayers |> List.head
         src =
             case player of
-                Just p -> if p.mode == ModeVim then vimSrc else emacsSrc
+                Just p ->
+                    if p.mode == ModeVim then
+                        if p == me then vimMeSrc else vimSrc
+                    else 
+                        if p == me then emacsMeSrc else emacsSrc
                 _ -> emacsSrc
     in
         Element.image cellDim cellDim src
@@ -130,7 +137,6 @@ renderEmptyMaze {cells,walls} =
         ) (Array.toList model)
         |> U.flatten2D
         |> Collage.collage canvasDim canvasDim 
-
 
 updateMaze : Maze -> Element.Element -> List Player -> Html Msg
 updateMaze {cells} canvas players =
@@ -276,14 +282,22 @@ renderPanel ({me,time,size} as model) =
                     allSpans    
 
         renderTitle =
-            span
+            div
                 [ style
-                    [ ( "font-size", "35px" )
-                    , ( "color", "rgb(52, 73, 95)" )
-                    , ( "line-height", "60px" )
+                    [ ( "color", "rgb(52, 73, 95)" ) 
                     ]
                 ]
-                [text "Editor Maze"]
+                [ span
+                    [ style
+                        [ ( "font-size", "35px" ) ]
+                    ]
+                    [ text "Editor Maze" ]
+                , span
+                    [ style 
+                        [ ( "display", "block" ) ]
+                    ]
+                    [ text "(MP)" ]
+                ]
         renderTime =
             let
                 pad = U.pad 2 "0"
@@ -300,7 +314,7 @@ renderPanel ({me,time,size} as model) =
                         , ( "margin-top", "20px" )
                         ]
                     ]
-                    [(text (hours ++ ":" ++ minutes ++ ":" ++ seconds))]
+                    [ ( text ( hours ++ ":" ++ minutes ++ ":" ++ seconds ) ) ]
     in
         div
         [ style
@@ -331,8 +345,62 @@ renderPanel ({me,time,size} as model) =
             ]
         ]
 
+--renderResult : Result -> Html Msg
+renderResult {mode,desc} =
+    case mode of
+        Nothing -> div [] []
+        Just m ->
+            let
+                title = (if m == ModeEmacs then "Emacs" else "Vim") ++ " player wins!"
+            in
+                div
+                    [ style
+                        [ ( "height", "100%" )
+                        , ( "transform", "translateY(-100%)" )
+                        , ( "background", "rgba(236, 240, 241, 0.95)" )
+                        , ( "color", "#35495e" )
+                        , ( "font-size", "18px" )
+                        , ( "position", "absolute" )
+                        , ( "width", "100%" )
+                        , ( "text-align", "left" )
+                        ]
+                    ]
+                    [ div
+                        [ style
+                            [ ( "padding", "15px" ) ]
+                        ]
+                        [ span
+                            [ style
+                                [ ( "display", "block" ) 
+                                , ( "font-size", "26px" )
+                                , ( "text-align", "center" )
+                                , ( "margin-bottom", "30px" )
+                                ]
+                            ]
+                            [ text title ]
+
+                        , span
+                            []
+                            [ text desc ]
+
+                        , span
+                            [ style
+                                [ ( "margin-top", "30px" )
+                                , ( "font-size", "20px" )
+                                , ( "display", "block" )
+                                , ( "position", "absolute" )
+                                , ( "left", "0" )
+                                , ( "bottom", "15px" )
+                                , ( "width", "100%" )
+                                , ( "text-align", "center" )
+                                ]
+                            ]
+                            [ text "Press Enter to continue." ]
+                        ]
+                    ]
+
 view : Model -> Html Msg
-view ({canvas,maze,me,players} as model) =
+view ({canvas,maze,me,players,result} as model) =
     let
         {pos} = me
         newMaze = List.foldl (\player mz -> MG.updatePos mz player.pos) maze players
@@ -346,7 +414,14 @@ view ({canvas,maze,me,players} as model) =
             [ style
                 [ ( "display", "flex" ) ]
             ]
-            [ div [ style [ ( "display", "inline-block" ) ] ] [ updateMaze newMaze canvas (me::players) ] -- Main game
+            [ div
+                [ style
+                    [ ( "display", "inline-block" )
+                    , ( "position", "relative" ) ]
+                ]
+                [ updateMaze newMaze canvas (me::players) -- Main game
+                , renderResult result
+                ] 
             , renderPanel model -- Panel
             ]
 

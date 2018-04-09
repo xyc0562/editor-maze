@@ -23,6 +23,11 @@ type alias Player =
     , mode: Mode
     }
 
+type alias Result =
+    { mode: Maybe Mode
+    , desc: String
+    }
+
 type alias Model =
     { maze: Maze
     , canvas: Element
@@ -31,6 +36,7 @@ type alias Model =
     , combos: Keyboard.Combo.Model Msg
     , time: Int
     , size: Int
+    , result: Result 
     } 
 
 -- Messages
