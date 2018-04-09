@@ -19,7 +19,7 @@ init : Maybe Model -> ( Model, Cmd Msg )
 init mModel =
     let size =
             case mModel of
-                Nothing -> 32
+                Nothing -> 25
                 Just m -> if m.size < 18 then 18 else if m.size > 50 then 50 else m.size
         freshModel =
             { maze = MG.genMaze size
