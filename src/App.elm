@@ -249,6 +249,19 @@ modeToStr mode =
         "ModeVim"
     else "ModeEmacs"
 
+stateUpdateMsg : Int -> Int -> Int -> Mode -> String
+stateUpdateMsg id x y mode =
+    let
+        obj = 
+            JE.object
+                [ ( "t", JE.string "playerStateUpdate" )
+                , ( "id", JE.int id )
+                , ( "x", JE.int x )
+                , ( "y", JE.int y )
+                , ( "mode", JE.string (modeToStr mode ))
+                ]
+    in JE.encode 0 obj
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({maze,me,time,result} as model) =
     case msg of
@@ -261,7 +274,12 @@ update msg ({maze,me,time,result} as model) =
                 {model | combos = updatedKeys} ! [cmd]
 
         UseMode m ->
-            {model | me = { me | mode = m } }  ! []
+            let
+                {x,y,id} = me.pos
+            in
+                ( { model | me = { me | mode = m } }
+                , sockSend (stateUpdateMsg id x y m)
+                )
 
         Tick ->
             let
@@ -347,17 +365,10 @@ update msg ({maze,me,time,result} as model) =
                             
                         else let
                                 newModel = { model | time = time + 1}
-                                obj = 
-                                    JE.object
-                                        [ ( "t", JE.string "playerStateUpdate" )
-                                        , ( "id", JE.int id )
-                                        , ( "x", JE.int newPos.x )
-                                        , ( "y", JE.int newPos.y )
-                                        , ( "mode", JE.string (modeToStr mode ))
-                                        ]
-                                msg = JE.encode 0 obj
                             in
-                                ( { model | me = (Player newPos mode) }, sockSend msg )
+                                ( { model | me = (Player newPos mode) }
+                                , sockSend (stateUpdateMsg id newPos.x newPos.y mode)
+                                )
 
 
 -- SUBSCRIPTIONS
