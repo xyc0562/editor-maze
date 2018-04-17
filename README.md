@@ -1,2 +1,2 @@
-# Elm Maze solver with Emacs and Vim key bindings
+# Elm Maze game with Emacs and Vim key bindings
 # Xu Yecheng
